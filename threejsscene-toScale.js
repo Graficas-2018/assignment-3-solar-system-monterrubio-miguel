@@ -16,6 +16,8 @@ pluto = null,
 moon = null,
 earthOrbit = null;
 
+var theta = 0;
+
 var orbits = [];
 var planets = [];
 
@@ -51,22 +53,26 @@ function animate()
     currentTime = now;
     var fract = deltat / duration;
     var angle = Math.PI * 2 * fract;
+    var orbitPeriod = 365 * fract;
     var movement = now * 0.001;
+    var timestamp = Date.now();
 
 
+    for (var i = 0; i < 9; i++) {
+        planets[i].rotation.y += angle / dayTimes[i];
+    }
+    theta += angle;
+    for (var i = 0; i < 9; i++) {
 
+        planets[i].position.x = orbitDistance[i] * AU * Math.cos(theta / orbitTimes[i]);
+        planets[i].position.z = orbitDistance[i] * AU * Math.sin(theta / orbitTimes[i]);
+        console.log(Math.cos(theta));
+        //planets[i].position.z = Math.sin(fract * orbitTimes[i]) * orbitDistance[i];
+    }
 
     // Rotate the sun about its Y axis
     sun.rotation.y += angle;
 
-    // Rotate the solar system about its Y axis
-    solarSystem.rotation.y -= angle;
-
-    // Rotate the earth about its Y axis
-    planetGroup.rotation.y += angle;
-    earth.rotation.y += angle;
-
-    // Rotate the moon about its X axis (tumble forward)
     moon.rotation.z += angle;
 }
 
@@ -97,7 +103,7 @@ function createScene(canvas)
 
     // Add  a camera so we can view the scene
     camera = new THREE.PerspectiveCamera( 45, canvas.width / canvas.height, 1, 400000000000 );
-    camera.position.z = 10000;
+    camera.position.z = 100;
     camera.position.y = 0;
     scene.add(camera);
 
@@ -108,33 +114,22 @@ function createScene(canvas)
     var light = new THREE.PointLight( 0xffffff, 2, 0, 2);
 
     //create orbits
-
     for (var i = 0; i < 9; i++) {
-    	var lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff } );
-    	var lineGeometry = new THREE.CircleGeometry( orbitDistance[i]*AU, 1024);
-    	lineGeometry.vertices.shift();
-    	orbits[i] = new THREE.LineLoop( lineGeometry, lineMaterial );
-    	orbits[i].rotation.x = Math.PI / 2;
-    	solarSystem.add(orbits[i]);
+        var lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff } );
+        var lineGeometry = new THREE.CircleGeometry( orbitDistance[i]*AU, 1024);
+        lineGeometry.vertices.shift();
+        orbits[i] = new THREE.LineLoop( lineGeometry, lineMaterial );
+        orbits[i].rotation.x = Math.PI / 2;
+        solarSystem.add(orbits[i]);
     }
-    var lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff } ),
-        lineGeometry = new THREE.CircleGeometry( 1*AU, 64);
-    lineGeometry.vertices.shift();
-    earthOrbit = new THREE.LineLoop( lineGeometry, lineMaterial );
-    earthOrbit.rotation.x = Math.PI / 2;
 
-    //add orbits to group
-    
-
-
-    var moonUrl = "../images/moonmap1k.jpg";
-    var sunUrl = "../images/sunmap.jpg"
-    var earthUrl = "../images/earthmap1k.jpg"
+    //planet texture urls stored in array
+    var planetURL = ["images/mercurymap.jpg", "images/venusmap.jpg", "images/earthmap1k.jpg", "images/mars_1k_color.jpg", "images/jupitermap.jpg", "images/saturnmap.jpg", "images/uranusmap.jpg", "images/neptunemap.jpg", "images/plutomap1k.jpg"]
+    var moonUrl = "images/moonmap1k.jpg";
+    var sunUrl = "images/sunmap.jpg";
     var moonTexture = new THREE.TextureLoader().load(moonUrl);
     var sunTexture = new THREE.TextureLoader().load(sunUrl);
-    var earthTexture = new THREE.TextureLoader().load(earthUrl);
     var moonMaterial = new THREE.MeshPhongMaterial({ map: moonTexture });
-    var earthMaterial = new THREE.MeshLambertMaterial({ map: earthTexture });
     var sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
 
     // Create the sun geometry
@@ -159,14 +154,16 @@ function createScene(canvas)
     // Move the planet group up and back from the sun
     planetGroup.position.set(0, 0, orbitDistance[2]*AU);
 
+    for (var i = 0; i < 9; i++) {
+        var planetTexture = new THREE.TextureLoader().load(planetURL[i]);
+        var planetMaterial = new THREE.MeshLambertMaterial({ map: planetTexture });
+        geometry = new THREE.SphereGeometry(planetRaduis[i], 100, 100);
+        planets[i] = new THREE.Mesh(geometry, planetMaterial);
+        planets[i].position.set(0, 0, -orbitDistance[i]*AU);
+        solarSystem.add(planets[i]);
+    }
     // Create the planet geometry
-    geometry = new THREE.SphereGeometry(planetRaduis[2], 20, 20);
     
-    // And put the geometry and material together into a mesh
-    earth = new THREE.Mesh(geometry, earthMaterial);
-
-    // Add the planet mesh to our group
-    planetGroup.add( earth );
 
 
 

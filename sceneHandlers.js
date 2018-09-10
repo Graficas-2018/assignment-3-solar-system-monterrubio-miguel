@@ -33,8 +33,8 @@ function scrollScene(event)
 
 function moveScene(deltax, deltay)
 {
-    camera.translateX(-deltax);
-    camera.translateY(deltay);
+    camera.translateX(-deltax/10);
+    camera.translateY(deltay/10);
 }
 
 function onMouseMove(evt)
