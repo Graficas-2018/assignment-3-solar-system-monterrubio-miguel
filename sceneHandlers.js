@@ -17,24 +17,26 @@ function scaleScene(scale)
 
 function scrollScene(event)
 {
-    if (event.deltaY < 0) {
-        duration -= 300;
-        if(duration < 100)
-            duration = 100;
-        console.log(duration);
-    }
-    else
-    {
+    // if (event.deltaY < 0) {
+    //     duration -= 300;
+    //     if(duration < 100)
+    //         duration = 100;
+    //     console.log(duration);
+    // }
+    // else
+    // {
         
-        duration += 300;
-        console.log(duration);
-    }
+    //     duration += 300;
+    //     console.log(duration);
+    // }
+
+    camera.translateZ(event.deltaY/10);
 }
 
 function moveScene(deltax, deltay)
 {
-    camera.translateX(-deltax/10);
-    camera.translateY(deltay/10);
+    camera.translateX(-deltax/5);
+    camera.translateY(deltay/5);
 }
 
 function onMouseMove(evt)

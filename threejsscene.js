@@ -2,19 +2,12 @@ var renderer = null,
 scene = null, 
 camera = null,
 solarSystem = null,
-planetGroup = null,
+planetGroups = [],
 sun = null,
-mercury = null,
-venus = null,
-earth = null,
-mars = null,
-jupiter = null,
-saturn = null,
-uranus = null,
-neptune = null,
-pluto = null,
-moon = null,
 earthOrbit = null;
+moonsGroup = null;
+var asteroids = [],
+kuiper = [];
 
 var theta = 0;
 
@@ -27,8 +20,7 @@ var timeScale = 1;
 var duration = 5000;
 var currentTime = Date.now();
 
-var planetGroup, planet_1, planet_2;
-var planet_1_orbit;
+var planetGroup;
 
 
 //All variables are taken in relation to Earth's measurements
@@ -42,10 +34,14 @@ var orbitDistance = [0.1, 0.2, 0.3, 0.4, 0.6, 0.9, 1.2, 1.4, 1.8];
 var planetRaduis = [3.83, 9.5, 5.33, 10, 109.73, 91.4, 39.81, 38.65, 1.87*5]
 
 //Sun radius downsized by 100 so other planets can be seen
-var sunRadius = 10.9198
+var sunRadius = 10.9198;
 
 //arbitrary measurement so planets aren't so small compared to sun
 var AU = 1200;
+
+//how many moons each planet has
+var hasMoon = [0, 0, 1, 2, 20, 10, 5, 5, 1]
+var moons = [];
 
 function animate() 
 {
@@ -67,14 +63,11 @@ function animate()
 
     	planets[i].position.x = orbitDistance[i] * AU * Math.cos(theta / orbitTimes[i]);
     	planets[i].position.z = orbitDistance[i] * AU * Math.sin(theta / orbitTimes[i]);
-    	console.log(Math.cos(theta));
     	//planets[i].position.z = Math.sin(fract * orbitTimes[i]) * orbitDistance[i];
     }
 
     // Rotate the sun about its Y axis
     sun.rotation.y += angle;
-
-    moon.rotation.z += angle;
 }
 
 function run() {
@@ -141,10 +134,6 @@ function createScene(canvas)
 
     sun.add(light);
 
-    // Tilt the mesh toward the viewer
-    // sun.rotation.x = Math.PI / 5;
-    // sun.rotation.y = Math.PI / 5;
-
     // Add the sun mesh to our group
     solarSystem.add( sun );
 
@@ -155,6 +144,8 @@ function createScene(canvas)
     // Move the planet group up and back from the sun
     planetGroup.position.set(0, 0, orbitDistance[2]*AU);
 
+
+    //create the planets
     for (var i = 0; i < 9; i++) {
     	var planetTexture = new THREE.TextureLoader().load(planetURL[i]);
     	var planetMaterial = new THREE.MeshLambertMaterial({ map: planetTexture });
@@ -163,27 +154,52 @@ function createScene(canvas)
     	planets[i].position.set(0, 0, -orbitDistance[i]*AU);
     	solarSystem.add(planets[i]);
     }
-    // Create the planet geometry
+
+    //create moons
+    var counter = 0;
+    for (var i = 0; i < 9; i++) {
+    	for (var j = 0; j < hasMoon[i]; j++) {
+    		var moonTexture = new THREE.TextureLoader().load(moonUrl);
+    		var moonMaterial = new THREE.MeshLambertMaterial({ map: moonTexture });
+    		geometry = new THREE.SphereGeometry((Math.random() * 2) + 1, 10, 10);
+    		moons.push(new THREE.Mesh(geometry, moonMaterial));
+    		var angle = Math.random() * Math.PI * 2;
+    		moons[counter].position.set(planetRaduis[i] * 1.5 * Math.cos(angle), (Math.random() * planetRaduis[i] * 2) - planetRaduis[i], planetRaduis[i] * 1.5 * Math.sin(angle));
+    		planets[i].add(moons[counter]);
+    		counter++;
+    	}
+    }
     
+    //create asteroids
+	for (var k = 0; k < 60; k++) {
+		var moonTexture = new THREE.TextureLoader().load(moonUrl);
+		var moonMaterial = new THREE.MeshLambertMaterial({ map: moonTexture });
+		geometry = new THREE.SphereGeometry((Math.random() * 2) + 1, 10, 10);
+		asteroids.push(new THREE.Mesh(geometry, moonMaterial));
+		var angle = Math.random() * Math.PI * 2;
+		var distance = (Math.random() * .1) + .45;
+		asteroids[k].position.set(AU * distance * Math.cos(angle), 0, AU * distance * Math.sin(angle));
+		//moons[k].position.set(planetRaduis[i] + 5, planetRaduis[i] + 5, planetRaduis[i] + 5);
+		console.log(asteroids[k].position.x, asteroids[k].position.z);
+		sun.add(asteroids[k]);
+	}
 
-
-
-
-    // Create the moon geometry
-    geometry = new THREE.SphereGeometry(.1, 20, 20);
-
-    // And put the geometry and material together into a mesh
-    moon = new THREE.Mesh(geometry, moonMaterial);
-
-    // Move the moon up and out from the planet
-    moon.position.set(1, 1, -.667);
-        
-    // Add the moon mesh to our group
-    planetGroup.add( moon );
-    
+	//create asteroids in kuiper belt
+	for (var k = 0; k < 60; k++) {
+		var moonTexture = new THREE.TextureLoader().load(moonUrl);
+		var moonMaterial = new THREE.MeshLambertMaterial({ map: moonTexture });
+		geometry = new THREE.SphereGeometry((Math.random() * 2) + 1, 10, 10);
+		kuiper.push(new THREE.Mesh(geometry, moonMaterial));
+		var angle = Math.random() * Math.PI * 2;
+		var distance = (Math.random() * .1) + 1.85;
+		kuiper[k].position.set(AU * distance * Math.cos(angle), 0, AU * distance * Math.sin(angle));
+		//moons[k].position.set(planetRaduis[i] + 5, planetRaduis[i] + 5, planetRaduis[i] + 5);
+		console.log(kuiper[k].position.x, kuiper[k].position.z);
+		sun.add(kuiper[k]);
+	}
 
 
     // Now add the group to our scene
     scene.add( solarSystem );
 
-}
+}	
