@@ -33,8 +33,8 @@ function scrollScene(event)
 
 function moveScene(deltax, deltay)
 {
-    camera.translateX(-deltax/73);
-    camera.translateY(deltay/73);
+    camera.translateX(-deltax);
+    camera.translateY(deltay);
 }
 
 function onMouseMove(evt)
@@ -79,8 +79,7 @@ function onMouseDown(evt)
             mouseLeft = true;
             break;
         case 1: // middle click. "Pauses" animation (just makes it really slow)
-            //pause = !pause;          
-            duration = 1;  
+            pause = !pause;           
             break;
         case 2: // right click
             mouseRight = true;

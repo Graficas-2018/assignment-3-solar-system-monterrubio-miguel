@@ -16,12 +16,10 @@ pluto = null,
 moon = null,
 earthOrbit = null;
 
-var theta = 0;
-
 var orbits = [];
 var planets = [];
 
-var day = 1;
+var day = 0;
 var pause = false;
 var timeScale = 1;
 var duration = 5000;
@@ -35,17 +33,16 @@ var planet_1_orbit;
 var orbitTimes = [.241, .615, 1, 1.881, 11.862, 29.447, 84.015, 164.787, 247.495];
 var dayTimes = [58.646, -243.025, 1, 1.026, .4125, .448, 0.719, .671, .4];
 
-//orbit distance is circular and not to scale. Due to size, gas giants are further apart than the rocky planets
-var orbitDistance = [0.1, 0.2, 0.3, 0.4, 0.6, 0.9, 1.2, 1.4, 1.8];
+//orbit distance is circular. As real orbits are elliptical, the number used for this project is the average radius of its orbit. Units are Astronomical Units. 1 AU is Earth's orbit radius.
+var orbitDistance = [0.4, 0.7, 1, 1.5, 5.2, 9.5, 19.2, 30.1, 39];
 
-//All planets are to scale in relation to Earth except Pluto, which is 5 times bigger for better visibility
-var planetRaduis = [3.83, 9.5, 5.33, 10, 109.73, 91.4, 39.81, 38.65, 1.87*5]
+//Most planets, especially gas giants, have a larger ecuatorial radius. Radius used here is the average planet radius, in relation to earth's, multiplied by 10
+var planetRaduis = [3.83, 9.5, 5.33, 10, 109.73, 91.4, 39.81, 38.65, 1.87]
 
-//Sun radius downsized by 100 so other planets can be seen
-var sunRadius = 10.9198
+var sunRadius = 1091.98
 
-//arbitrary measurement so planets aren't so small compared to sun
-var AU = 1200;
+//distance of astronomical units in our arbitrary scale
+var AU = 23481;
 
 function animate() 
 {
@@ -54,26 +51,22 @@ function animate()
     currentTime = now;
     var fract = deltat / duration;
     var angle = Math.PI * 2 * fract;
-    var orbitPeriod = 365 * fract;
     var movement = now * 0.001;
-    var timestamp = Date.now();
 
 
-    for (var i = 0; i < 9; i++) {
-    	planets[i].rotation.y += angle / dayTimes[i];
-    }
-    theta += angle;
-    for (var i = 0; i < 9; i++) {
 
-    	planets[i].position.x = orbitDistance[i] * AU * Math.cos(theta / orbitTimes[i]);
-    	planets[i].position.z = orbitDistance[i] * AU * Math.sin(theta / orbitTimes[i]);
-    	console.log(Math.cos(theta));
-    	//planets[i].position.z = Math.sin(fract * orbitTimes[i]) * orbitDistance[i];
-    }
 
     // Rotate the sun about its Y axis
     sun.rotation.y += angle;
 
+    // Rotate the solar system about its Y axis
+    solarSystem.rotation.y -= angle;
+
+    // Rotate the earth about its Y axis
+    planetGroup.rotation.y += angle;
+    earth.rotation.y += angle;
+
+    // Rotate the moon about its X axis (tumble forward)
     moon.rotation.z += angle;
 }
 
@@ -104,7 +97,7 @@ function createScene(canvas)
 
     // Add  a camera so we can view the scene
     camera = new THREE.PerspectiveCamera( 45, canvas.width / canvas.height, 1, 400000000000 );
-    camera.position.z = 100;
+    camera.position.z = 10000;
     camera.position.y = 0;
     scene.add(camera);
 
@@ -115,6 +108,7 @@ function createScene(canvas)
     var light = new THREE.PointLight( 0xffffff, 2, 0, 2);
 
     //create orbits
+
     for (var i = 0; i < 9; i++) {
     	var lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff } );
     	var lineGeometry = new THREE.CircleGeometry( orbitDistance[i]*AU, 1024);
@@ -123,14 +117,24 @@ function createScene(canvas)
     	orbits[i].rotation.x = Math.PI / 2;
     	solarSystem.add(orbits[i]);
     }
+    var lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff } ),
+        lineGeometry = new THREE.CircleGeometry( 1*AU, 64);
+    lineGeometry.vertices.shift();
+    earthOrbit = new THREE.LineLoop( lineGeometry, lineMaterial );
+    earthOrbit.rotation.x = Math.PI / 2;
 
-   	//planet texture urls stored in array
-    var planetURL = ["images/mercurymap.jpg", "images/venusmap.jpg", "images/earthmap1k.jpg", "images/mars_1k_color.jpg", "images/jupitermap.jpg", "images/saturnmap.jpg", "images/uranusmap.jpg", "images/neptunemap.jpg", "images/plutomap1k.jpg"]
-    var moonUrl = "images/moonmap1k.jpg";
-    var sunUrl = "images/sunmap.jpg";
+    //add orbits to group
+    
+
+
+    var moonUrl = "../images/moonmap1k.jpg";
+    var sunUrl = "../images/sunmap.jpg"
+    var earthUrl = "../images/earthmap1k.jpg"
     var moonTexture = new THREE.TextureLoader().load(moonUrl);
     var sunTexture = new THREE.TextureLoader().load(sunUrl);
+    var earthTexture = new THREE.TextureLoader().load(earthUrl);
     var moonMaterial = new THREE.MeshPhongMaterial({ map: moonTexture });
+    var earthMaterial = new THREE.MeshLambertMaterial({ map: earthTexture });
     var sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
 
     // Create the sun geometry
@@ -155,16 +159,14 @@ function createScene(canvas)
     // Move the planet group up and back from the sun
     planetGroup.position.set(0, 0, orbitDistance[2]*AU);
 
-    for (var i = 0; i < 9; i++) {
-    	var planetTexture = new THREE.TextureLoader().load(planetURL[i]);
-    	var planetMaterial = new THREE.MeshLambertMaterial({ map: planetTexture });
-    	geometry = new THREE.SphereGeometry(planetRaduis[i], 100, 100);
-    	planets[i] = new THREE.Mesh(geometry, planetMaterial);
-    	planets[i].position.set(0, 0, -orbitDistance[i]*AU);
-    	solarSystem.add(planets[i]);
-    }
     // Create the planet geometry
+    geometry = new THREE.SphereGeometry(planetRaduis[2], 20, 20);
     
+    // And put the geometry and material together into a mesh
+    earth = new THREE.Mesh(geometry, earthMaterial);
+
+    // Add the planet mesh to our group
+    planetGroup.add( earth );
 
 
 
